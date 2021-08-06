@@ -37,6 +37,8 @@ describe Google::Cloud::PubSub, :pubsub do
   let(:dead_letter_topic_name) { $topic_names[8] }
   let(:dead_letter_topic_name_2) { $topic_names[9] }
   let(:labels) { { "foo" => "bar" } }
+  let(:retention) { 600 }
+  let(:new_retention) { -1 }
   let(:filter) { "attributes.event_type = \"1\"" }
 
   before do
@@ -62,7 +64,7 @@ describe Google::Cloud::PubSub, :pubsub do
     it "should be created, updated and deleted" do
       topic = pubsub.create_topic new_topic_name,
                                   labels: labels,
-                                  retention: 600
+                                  retention: retention
       _(topic).must_be_kind_of Google::Cloud::PubSub::Topic
       topic = pubsub.topic(topic.name)
       _(topic).wont_be :nil?
@@ -72,9 +74,12 @@ describe Google::Cloud::PubSub, :pubsub do
       topic.labels = {}
       _(topic.labels).must_be :empty?
 
-      _(topic.retention).must_equal 600
-      topic.retention = -1
-      _(topic.retention).must_equal -1 # TODO: Should this be nil?
+      _(topic.retention).must_equal retention
+      # If set to a negative value, this clears message retention duration from the topic.
+      topic.retention = new_retention
+      _(topic.retention).must_equal new_retention
+      topic.reload!
+      _(topic.retention).must_equal new_retention
 
       topic.delete
       _(pubsub.topic(topic.name)).must_be :nil?
@@ -192,6 +197,7 @@ describe Google::Cloud::PubSub, :pubsub do
     end
 
     it "should create, update, detach and delete a subscription" do
+      topic.retention = 1200
       # create
       # `testdetachsubsxyz` is a special prefix to test the detach feature while pre-release in prod.
       subscription = topic.subscribe "testdetachsubsxyz-#{$topic_prefix}-sub-detach", retain_acked: true,
@@ -203,6 +209,7 @@ describe Google::Cloud::PubSub, :pubsub do
       _(subscription).must_be_kind_of Google::Cloud::PubSub::Subscription
       assert subscription.retain_acked
       _(subscription.retention).must_equal 600
+      _(subscription.topic_retention).must_equal 1200
       _(subscription.labels).must_equal labels
       _(subscription.labels).must_be :frozen?
       _(subscription.filter).must_equal filter
@@ -240,6 +247,8 @@ describe Google::Cloud::PubSub, :pubsub do
 
       # delete
       subscription.delete
+
+      topic.retention = -1
     end
 
     it "should not error when asking for a non-existent subscription" do

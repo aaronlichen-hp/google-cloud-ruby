@@ -196,6 +196,23 @@ module Google
         end
 
         ##
+        # Indicates the minimum duration for which a message is retained after
+        # it is published to the subscription's topic. If this field is set,
+        # messages published to the subscription's topic in the last
+        # `topic_message_retention_duration` are always available to subscribers.
+        # Output only. See {Topic#retention}.
+        #
+        # Makes an API call to retrieve the retention value when called on a
+        # reference object. See {#reference?}.
+        #
+        # @return [Numeric] The topic message retention duration in seconds.
+        #
+        def topic_retention
+          ensure_grpc!
+          Convert.duration_to_number @grpc.topic_message_retention_duration
+        end
+
+        ##
         # Returns the URL locating the endpoint to which messages should be
         # pushed. For example, a Webhook endpoint might use
         # `https://example.com/push`.

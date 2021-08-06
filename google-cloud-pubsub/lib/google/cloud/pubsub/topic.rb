@@ -313,7 +313,7 @@ module Google
         # timestamp](https://cloud.google.com/pubsub/docs/replay-overview#seek_to_a_time)
         # that is up to `message_retention_duration` in the past. If this field is
         # not set, message retention is controlled by settings on individual
-        # subscriptions. Cannot be more than 7 days or less than 10 minutes.
+        # subscriptions. Cannot be less than 600 (10 minutes) or more than 604_800 (7 days).
         #
         # Makes an API call to retrieve the retention value when called on a
         # reference object. See {#reference?}.
@@ -326,9 +326,13 @@ module Google
         end
 
         ##
-        # Sets the message retention duration in seconds. See {#retention}.
+        # Sets the message retention duration in seconds. If set to a positive duration
+        # between 600 (10 minutes) and 604_800 (7 days), inclusive, the message retention
+        # duration is changed. If set to a negative value, this clears message retention
+        # duration from the topic.
+        # See {#retention}.
         #
-        # @param [Numeric] new_retention The new retention value.
+        # @param [Numeric] new_retention The new message retention duration value.
         #
         def retention= new_retention
           new_retention_duration = Convert.number_to_duration new_retention
